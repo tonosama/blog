@@ -3,7 +3,7 @@ subtitle:           Sho Teramotoの記録
 email:              sho-teramoto@emp-next.co.jp
 description:        Sho Teramotoの記録
 author:             殿様ガエル
-baseurl:            ""
+baseurl:            "/blog"
 url:                "https://startbootstrap.github.io"
 
 # Social Profiles
