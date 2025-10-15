@@ -1,0 +1,46 @@
+---
+layout: page
+title: Tags
+description: "Posts tagged by category"
+background: '/img/bg-post.jpg'
+---
+
+{% assign tags = site.tags | sort %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+      <div class="d-flex flex-wrap">
+        {% for tag in tags %}
+          {% assign t = tag | first %}
+          <a href="#{{ t | slugify }}" class="btn btn-sm btn-light mr-2 mb-2">{{ t }}</a>
+        {% endfor %}
+      </div>
+
+      <hr>
+
+      {% for tag in tags %}
+        {% assign t = tag | first %}
+        {% assign posts = tag | last %}
+        <h2 id="{{ t | slugify }}">{{ t }}</h2>
+        {% for post in posts %}
+          {% if post.tags contains t %}
+            <article class="post-preview">
+              <a href="{{ post.url | relative_url }}">
+                <h3 class="post-title">{{ post.title }}</h3>
+                {% if post.subtitle %}
+                <h4 class="post-subtitle">{{ post.subtitle }}</h4>
+                {% endif %}
+              </a>
+              <p class="post-meta">Posted by
+                {% if post.author %}{{ post.author }}{% else %}{{ site.author }}{% endif %}
+                on {{ post.date | date: '%B %d, %Y' }}
+              </p>
+            </article>
+            <hr>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
