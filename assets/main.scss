@@ -3,3 +3,19 @@
 ---
 
 @import "styles";
+
+// Post Preview Card Style
+.post-preview {
+  border: 1px solid #e9ecef;
+  padding: 25px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+
+  &:hover {
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+  }
+}
