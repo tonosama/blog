@@ -43,7 +43,13 @@
     flex-basis: 100%; // Default for single column on small screens
 
     @media (min-width: 992px) {
-      flex-basis: calc(50% - 20px); // Two columns on larger screens
+      flex-basis: calc(50% - 10px); // Two columns on larger screens, adjusting gap calculation
+    }
+  }
+
+  &.three-columns .post-preview {
+     @media (min-width: 992px) {
+      flex-basis: calc(33.333% - 14px); // Three columns on larger screens
     }
   }
 }

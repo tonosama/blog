@@ -23,6 +23,7 @@ background: '/img/bg-post.jpg'
         {% assign t = tag | first %}
         {% assign posts = tag | last %}
         <h2 id="{{ t | slugify }}">{{ t }}</h2>
+        <div class="post-list-container three-columns">
         {% for post in posts %}
           {% if post.tags contains t %}
             <article class="post-preview">
@@ -36,10 +37,11 @@ background: '/img/bg-post.jpg'
                 {% if post.author %}{{ post.author }}{% else %}{{ site.author }}{% endif %}
                 on {{ post.date | date: '%B %d, %Y' }}
               </p>
+              <a href="{{ post.url | relative_url }}" class="read-more-link">もっと見る ▶︎</a>
             </article>
-            <hr>
           {% endif %}
         {% endfor %}
+        </div>
       {% endfor %}
     </div>
   </div>
