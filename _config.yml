@@ -4,7 +4,7 @@ email:              sho-teramoto@emp-next.com
 description:        Sho Teramotoの記録
 author:             殿様ガエル
 baseurl:            "/blog"
-url:                "https://tonosama.github.io/blog"
+url:                "https://tonosama.github.io"
 
 # Social Profiles
 #twitter_username:   SBootstrap
