@@ -95,8 +95,9 @@ jobs:
         with:
           # 'status'にツイートする本文を設定。ステップ5で生成された'tweet_text'を利用
           status: ${{ steps.prepare_tweet.outputs.tweet_text }}
-          # Twitter APIの認証情報をGitHubのSecretsから取得して設定
-          consumer-key: ${{ secrets.TWITTER_API_KEY }}
-          consumer-secret: ${{ secrets.TWITTER_API_KEY_SECRET }}
-          access-token: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          access-token-secret: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        env:
+          # Twitter APIの認証情報をGitHubのSecretsから取得して環境変数として設定
+          CONSUMER_KEY: ${{ secrets.TWITTER_API_KEY }}
+          CONSUMER_SECRET: ${{ secrets.TWITTER_API_KEY_SECRET }}
+          ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
