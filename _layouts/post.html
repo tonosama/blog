@@ -22,6 +22,10 @@ description: "ブログ"
               <a href="#">{% if page.author %}{{ page.author }}{% else %}{{ site.author }}{% endif %}</a>
               on {{ page.date | date: '%B %d, %Y' }} &middot; {% include read_time.html
               content=page.content %}
+              {% if page.category %}
+              &middot; Category:
+                <a href="/category.html#{{ page.category | slugify }}">{{ page.category }}</a>
+              {% endif %}
               {% if page.tags.size > 0 %}
               &middot; Tags:
               {% for tag in page.tags %}

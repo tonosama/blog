@@ -1,0 +1,46 @@
+---
+layout: page
+title: Categories
+description: "Posts grouped by category"
+background: '/img/bg-post.jpg'
+---
+
+{% assign categories = site.categories | sort %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-12 col-md-10 mx-auto">
+      <div class="d-flex flex-wrap">
+        {% for category in categories %}
+          {% assign c = category | first %}
+          <a href="#{{ c | slugify }}" class="btn btn-sm btn-light mr-2 mb-2">{{ c }}</a>
+        {% endfor %}
+      </div>
+
+      <hr>
+
+      {% for category in categories %}
+        {% assign c = category | first %}
+        {% assign posts = category | last %}
+        <h2 id="{{ c | slugify }}">{{ c }}</h2>
+        <div class="post-list-container three-columns">
+        {% for post in posts %}
+          <article class="post-preview">
+            <a href="{{ post.url | relative_url }}">
+              <h3 class="post-title">{{ post.title }}</h3>
+              {% if post.subtitle %}
+              <h4 class="post-subtitle">{{ post.subtitle }}</h4>
+              {% endif %}
+            </a>
+            <p class="post-meta">Posted by
+              {% if post.author %}{{ post.author }}{% else %}{{ site.author }}{% endif %}
+              on {{ post.date | date: '%B %d, %Y' }}
+            </p>
+            <a href="{{ post.url | relative_url }}" class="read-more-link">もっと見る ▶︎</a>
+          </article>
+        {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
