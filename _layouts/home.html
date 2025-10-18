@@ -31,7 +31,7 @@ layout: default
 
         <!-- Home Post List -->
         <div class="post-list-container three-columns">
-        {% for post in site.posts limit : 5 %}
+        {% for post in site.posts limit : 9 %}
 
         <article class="post-preview">
           <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
