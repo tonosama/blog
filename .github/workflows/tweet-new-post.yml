@@ -85,20 +85,19 @@ jobs:
           # LATEST_POST_FILEという環境変数名で、ステップ2で取得したファイルパスを渡す
           LATEST_POST_FILE: ${{ steps.get_post.outputs.post_path }}
 
-      # ステップ6: ツイートの投稿
-      - name: Post Tweet
+      # ステップ6: ツイートの投稿 (API v2を使用)
+      - name: Post Tweet (using API v2)
         # 実行条件: 
         # 1. ステップ2で'post_path'が空でない
         # 2. かつ、ステップ5('prepare_tweet')で'tweet_text'という出力が生成されている
         if: steps.get_post.outputs.post_path != '' && steps.prepare_tweet.outputs.tweet_text
-        # snow-actions/tweet@v1.4.0 を利用してツイートを投稿
-        uses: snow-actions/tweet@v1.4.0
-        with:
-          # 'status'にツイートする本文を設定。ステップ5で生成された'tweet_text'を利用
-          status: ${{ steps.prepare_tweet.outputs.tweet_text }}
+        # 新しく作成したPythonスクリプトを実行
+        run: python .github/scripts/post_tweet.py
         env:
-          # Twitter APIの認証情報をGitHubのSecretsから取得して環境変数として設定
-          CONSUMER_KEY: ${{ secrets.TWITTER_API_KEY }}
-          CONSUMER_SECRET: ${{ secrets.TWITTER_API_KEY_SECRET }}
-          ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          # GitHub Secretsから認証情報を取得して環境変数として設定
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_KEY_SECRET: ${{ secrets.TWITTER_API_KEY_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          # ステップ5で生成されたツイート本文を環境変数として渡す
+          TWEET_TEXT: ${{ steps.prepare_tweet.outputs.tweet_text }}
