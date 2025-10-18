@@ -3,11 +3,12 @@ name: Tweet New Post
 
 # ワークフローが実行されるタイミングを定義
 on:
+  workflow_dispatch:
   # pushイベントに反応
   push:
     # どのブランチへのpushを監視するか
     branches:
-      - main # 重要: もしデフォルトブランチが 'master' の場合は、 'master' に変更してください
+      - main 
     # どのファイルパスの変更を監視するか
     paths:
       - '_posts/**.md' # _postsディレクトリ以下のマークダウンファイルが対象
