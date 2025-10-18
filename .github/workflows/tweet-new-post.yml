@@ -1,0 +1,102 @@
+# ワークフローの名称
+name: Tweet New Post
+
+# ワークフローが実行されるタイミングを定義
+on:
+  # pushイベントに反応
+  push:
+    # どのブランチへのpushを監視するか
+    branches:
+      - main # 重要: もしデフォルトブランチが 'master' の場合は、 'master' に変更してください
+    # どのファイルパスの変更を監視するか
+    paths:
+      - '_posts/**.md' # _postsディレクトリ以下のマークダウンファイルが対象
+
+# 実行されるジョブを定義
+jobs:
+  # 'tweet'という名前のジョブ
+  tweet:
+    # ジョブを実行する仮想環境の種類
+    runs-on: ubuntu-latest
+    
+    # ジョブ内で実行される一連のステップ
+    steps:
+      # ステップ1: リポジトリのチェックアウト
+      - name: Check out repository
+        # GitHub公式のアクションを利用して、リポジトリのコードを仮想環境にコピーする
+        uses: actions/checkout@v4
+        with:
+          # git fetchの深さを指定。2にすることで、最新とその1つ前のコミット履歴を取得する
+          # これにより、HEAD~1 と HEAD の差分を比較できるようになる
+          fetch-depth: 2 # 直前のコミットと比較するために、最新2件のコミットを取得します
+
+      # ステップ2: 最新の投稿ファイルを取得
+      - name: Get the latest post file
+        # このステップにIDを付与し、後続のステップから出力（outputs）を参照できるようにする
+        id: get_post
+        # 実行するシェルコマンド
+        run: |
+          # git diffコマンドで、最新のコミット(HEAD)と1つ前のコミット(HEAD~1)の差分を調べる
+          # --name-onlyで変更があったファイル名のみを出力し、grepで_postsディレクトリ以下の.mdファイルに絞り込む
+          # head -n 1で、複数ファイルがあった場合に最初の1つだけを取得する
+          LATEST_POST_FILE=$(git diff --name-only HEAD~1 HEAD | grep "_posts/.*\.md$" | head -n 1)
+          
+          # 取得したファイルパスが空文字かどうかをチェック
+          if [ -z "$LATEST_POST_FILE" ]; then
+            # 空の場合、ツイート対象の投稿がないと判断し、メッセージを表示して終了
+            echo "No new/modified markdown post found in the last commit. Nothing to tweet."
+            # 後続ステップがこのステップの出力を参照できるよう、'post_path'という名前で空の出力を設定
+            echo "post_path=" >> $GITHUB_OUTPUT
+          else
+            # ファイルが見つかった場合、そのファイルパスを表示
+            echo "Found post to tweet: ${LATEST_POST_FILE}"
+            # 'post_path'という名前で、見つかったファイルパスを出力に設定
+            echo "post_path=${LATEST_POST_FILE}" >> $GITHUB_OUTPUT
+          fi
+
+      # ステップ3: Pythonのセットアップ
+      - name: Set up Python
+        # 実行条件: ステップ2('get_post')で'post_path'が空でなかった場合のみ実行
+        if: steps.get_post.outputs.post_path != ''
+        # actions/setup-python@v5 を利用してPython環境を構築
+        uses: actions/setup-python@v5
+        with:
+          # Pythonのバージョンを指定
+          python-version: '3.10'
+
+      # ステップ4: Python依存ライブラリのインストール
+      - name: Install Python dependencies
+        # 実行条件: ステップ2で'post_path'が空でなかった場合のみ実行
+        if: steps.get_post.outputs.post_path != ''
+        # pipコマンドで、pyyamlライブラリをインストール（YAMLファイルを扱うため）
+        run: pip install pyyaml
+
+      # ステップ5: ツイート本文の準備
+      - name: Prepare Tweet Text
+        # 実行条件: ステップ2で'post_path'が空でなかった場合のみ実行
+        if: steps.get_post.outputs.post_path != ''
+        # このステップにIDを付与
+        id: prepare_tweet
+        # 指定されたPythonスクリプトを実行
+        run: python .github/scripts/prepare_tweet.py
+        # スクリプトに渡す環境変数を設定
+        env:
+          # LATEST_POST_FILEという環境変数名で、ステップ2で取得したファイルパスを渡す
+          LATEST_POST_FILE: ${{ steps.get_post.outputs.post_path }}
+
+      # ステップ6: ツイートの投稿
+      - name: Post Tweet
+        # 実行条件: 
+        # 1. ステップ2で'post_path'が空でない
+        # 2. かつ、ステップ5('prepare_tweet')で'tweet_text'という出力が生成されている
+        if: steps.get_post.outputs.post_path != '' && steps.prepare_tweet.outputs.tweet_text
+        # snow-actions/tweet@v1.4.0 を利用してツイートを投稿
+        uses: snow-actions/tweet@v1.4.0
+        with:
+          # 'status'にツイートする本文を設定。ステップ5で生成された'tweet_text'を利用
+          status: ${{ steps.prepare_tweet.outputs.tweet_text }}
+          # Twitter APIの認証情報をGitHubのSecretsから取得して設定
+          consumer-key: ${{ secrets.TWITTER_API_KEY }}
+          consumer-secret: ${{ secrets.TWITTER_API_KEY_SECRET }}
+          access-token: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
