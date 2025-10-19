@@ -2,6 +2,7 @@ import os
 import yaml
 from urllib.parse import quote
 import re
+from datetime import datetime
 
 post_file = os.environ.get('LATEST_POST_FILE')
 if not post_file:
@@ -15,6 +16,8 @@ try:
     with open(config_file, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     base_url = config.get('url', '')
+    # baseurl を取得（存在しない場合は空文字）
+    baseurl_path = config.get('baseurl', '')
 
     # --- 投稿ファイルを読み込む ---
     with open(post_file, 'r', encoding='utf-8') as f:
@@ -27,18 +30,31 @@ try:
     title = front_matter.get('title', '')
     tags = front_matter.get('tags', [])
     category = front_matter.get('category', 'uncategorized')
+    # フロントマターから日付を取得
+    post_date = front_matter.get('date')
 
     # --- 記事のURLを組み立てる ---
     filename = os.path.basename(post_file)
-    match = re.match(r'(\d{4})-(\d{2})-(\d{2})-(.*)\.md', filename)
+    # ファイル名からは slug のみを取得するように変更
+    match = re.match(r'\d{4}-\d{2}-\d{2}-(.*)\.md', filename)
     if not match:
         print(f"Error: Filename {filename} does not match expected format YYYY-MM-DD-slug.md")
         exit()
 
-    year, month, day, slug = match.groups()
+    slug = match.groups()[0]
+    
+    # dateオブジェクトから年月日を取得
+    if isinstance(post_date, str):
+        # 文字列の場合はdatetimeオブジェクトに変換
+        post_date = datetime.fromisoformat(post_date)
+    
+    year = post_date.strftime('%Y')
+    month = post_date.strftime('%m')
+    day = post_date.strftime('%d')
     
     encoded_category = quote(category.strip())
-    post_url = f"{base_url}/{encoded_category}/{year}/{month}/{day}/{slug}.html"
+    # baseurl_path を含めてURLを組み立てる
+    post_url = f"{base_url}{baseurl_path}/{encoded_category}/{year}/{month}/{day}/{slug}.html"
 
     # --- ツイート本文を組み立てる ---
     hashtags = " ".join([f"#{tag.replace(' ', '').replace('　', '')}" for tag in tags if tag])
