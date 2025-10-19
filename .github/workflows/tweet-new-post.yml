@@ -69,8 +69,8 @@ jobs:
       - name: Install Python dependencies
         # 実行条件: ステップ2で'post_path'が空でなかった場合のみ実行
         if: steps.get_post.outputs.post_path != ''
-        # pipコマンドで、pyyamlライブラリをインストール（YAMLファイルを扱うため）
-        run: pip install pyyaml
+        # pipコマンドで、pyyamlとtweepyライブラリをインストール
+        run: pip install pyyaml tweepy
 
       # ステップ5: ツイート本文の準備
       - name: Prepare Tweet Text
