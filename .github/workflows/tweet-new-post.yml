@@ -8,17 +8,21 @@ on:
   push:
     # どのブランチへのpushを監視するか
     branches:
-      - main 
+      - main
     # どのファイルパスの変更を監視するか
     paths:
       - '_posts/**.md' # _postsディレクトリ以下のマークダウンファイルが対象
 
 # 実行されるジョブを定義
 jobs:
-  # 'tweet'という名前のジョブ
-  tweet:
+  # 'detect-changes' という名前のジョブ。変更されたファイルを検出する。
+  detect-changes:
     # ジョブを実行する仮想環境の種類
     runs-on: ubuntu-latest
+    # このジョブの出力を定義
+    outputs:
+      # 'posts'という名前の出力。JSON文字列形式のファイルリストを格納する。
+      posts: ${{ steps.get_posts.outputs.posts }}
     
     # ジョブ内で実行される一連のステップ
     steps:
@@ -31,66 +35,70 @@ jobs:
           # これにより、HEAD~1 と HEAD の差分を比較できるようになる
           fetch-depth: 2 # 直前のコミットと比較するために、最新2件のコミットを取得します
 
-      # ステップ2: 最新の投稿ファイルを取得
-      - name: Get the latest post file
+      # ステップ2: 変更された投稿ファイルを取得
+      - name: Get modified post files
         # このステップにIDを付与し、後続のステップから出力（outputs）を参照できるようにする
-        id: get_post
+        id: get_posts
         # 実行するシェルコマンド
         run: |
           # git diffコマンドで、最新のコミット(HEAD)と1つ前のコミット(HEAD~1)の差分を調べる
           # --name-onlyで変更があったファイル名のみを出力し、grepで_postsディレクトリ以下の.mdファイルに絞り込む
-          # head -n 1で、複数ファイルがあった場合に最初の1つだけを取得する
-          LATEST_POST_FILE=$(git diff --name-only HEAD~1 HEAD | grep "_posts/.*\.md$" | head -n 1)
-          
-          # 取得したファイルパスが空文字かどうかをチェック
-          if [ -z "$LATEST_POST_FILE" ]; then
-            # 空の場合、ツイート対象の投稿がないと判断し、メッセージを表示して終了
-            echo "No new/modified markdown post found in the last commit. Nothing to tweet."
-            # 後続ステップがこのステップの出力を参照できるよう、'post_path'という名前で空の出力を設定
-            echo "post_path=" >> $GITHUB_OUTPUT
-          else
-            # ファイルが見つかった場合、そのファイルパスを表示
-            echo "Found post to tweet: ${LATEST_POST_FILE}"
-            # 'post_path'という名前で、見つかったファイルパスを出力に設定
-            echo "post_path=${LATEST_POST_FILE}" >> $GITHUB_OUTPUT
-          fi
+          # jqコマンドで、結果をJSON配列に変換する
+          POST_FILES=$(git diff --name-only HEAD~1 HEAD | grep "_posts/.*\.md$" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "Found posts: ${POST_FILES}"
+          # 'posts'という名前で、JSON配列形式のファイルリストを出力に設定
+          echo "posts=${POST_FILES}" >> $GITHUB_OUTPUT
 
-      # ステップ3: Pythonのセットアップ
+  # 'tweet'という名前のジョブ。各投稿をツイートする。
+  tweet:
+    # このジョブは'detect-changes'ジョブが正常に完了した後に実行される
+    needs: detect-changes
+    # 'detect-changes'ジョブの出力が空の配列 '[]' でない場合のみ、このジョブを実行する
+    if: needs.detect-changes.outputs.posts != '[]'
+    # ジョブを実行する仮想環境の種類
+    runs-on: ubuntu-latest
+    # strategy: matrix を使い、複数のジョブを並列実行する
+    strategy:
+      # 'detect-changes'ジョブの出力（JSON配列）を元に、動的な実行計画を作成する
+      matrix:
+        # 'post_path'という変数を定義し、ファイルパスの配列を展開する
+        post_path: ${{ fromJson(needs.detect-changes.outputs.posts) }}
+
+    # ジョブ内で実行される一連のステップ
+    steps:
+      # ステップ1: リポジトリのチェックアウト
+      - name: Check out repository
+        # 各Matrixジョブでコードが必要なため、再度チェックアウトする
+        uses: actions/checkout@v4
+
+      # ステップ2: Pythonのセットアップ
       - name: Set up Python
-        # 実行条件: ステップ2('get_post')で'post_path'が空でなかった場合のみ実行
-        if: steps.get_post.outputs.post_path != ''
         # actions/setup-python@v5 を利用してPython環境を構築
         uses: actions/setup-python@v5
         with:
           # Pythonのバージョンを指定
           python-version: '3.10'
 
-      # ステップ4: Python依存ライブラリのインストール
+      # ステップ3: Python依存ライブラリのインストール
       - name: Install Python dependencies
-        # 実行条件: ステップ2で'post_path'が空でなかった場合のみ実行
-        if: steps.get_post.outputs.post_path != ''
         # pipコマンドで、pyyamlとtweepyライブラリをインストール
         run: pip install pyyaml tweepy
 
-      # ステップ5: ツイート本文の準備
+      # ステップ4: ツイート本文の準備
       - name: Prepare Tweet Text
-        # 実行条件: ステップ2で'post_path'が空でなかった場合のみ実行
-        if: steps.get_post.outputs.post_path != ''
         # このステップにIDを付与
         id: prepare_tweet
         # 指定されたPythonスクリプトを実行
         run: python .github/scripts/prepare_tweet.py
         # スクリプトに渡す環境変数を設定
         env:
-          # LATEST_POST_FILEという環境変数名で、ステップ2で取得したファイルパスを渡す
-          LATEST_POST_FILE: ${{ steps.get_post.outputs.post_path }}
+          # LATEST_POST_FILEという環境変数名で、Matrixで展開された現在のファイルパスを渡す
+          LATEST_POST_FILE: ${{ matrix.post_path }}
 
-      # ステップ6: ツイートの投稿 (API v2を使用)
+      # ステップ5: ツイートの投稿 (API v2を使用)
       - name: Post Tweet (using API v2)
-        # 実行条件: 
-        # 1. ステップ2で'post_path'が空でない
-        # 2. かつ、ステップ5('prepare_tweet')で'tweet_text'という出力が生成されている
-        if: steps.get_post.outputs.post_path != '' && steps.prepare_tweet.outputs.tweet_text
+        # 実行条件: ステップ4('prepare_tweet')で'tweet_text'という出力が生成されている
+        if: steps.prepare_tweet.outputs.tweet_text
         # 新しく作成したPythonスクリプトを実行
         run: python .github/scripts/post_tweet.py
         env:
@@ -99,5 +107,5 @@ jobs:
           TWITTER_API_KEY_SECRET: ${{ secrets.TWITTER_API_KEY_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-          # ステップ5で生成されたツイート本文を環境変数として渡す
+          # ステップ4で生成されたツイート本文を環境変数として渡す
           TWEET_TEXT: ${{ steps.prepare_tweet.outputs.tweet_text }}
