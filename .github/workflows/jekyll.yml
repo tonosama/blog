@@ -39,6 +39,7 @@ jobs:
         with:
           ruby-version: '3.1'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          cache-version: 1 # Increment this value to reset cache
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
