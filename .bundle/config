@@ -1,0 +1,3 @@
+---
+BUNDLE_BUILD__FFI: "--with-cflags=-I/opt/homebrew/opt/libffi/include --with-ldflags=-L/opt/homebrew/opt/libffi/lib"
+BUNDLE_SSL_CA_FILE: "/opt/homebrew/etc/openssl@3/cert.pem"

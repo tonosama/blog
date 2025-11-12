@@ -15,3 +15,11 @@ gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 # Performance-booster for watching directories on Windows
 gem "wdm", "~> 0.1.0" if Gem.win_platform?
+
+# For more see: https://github.com/jekyll/jekyll-gist
+gem "jekyll-gist", "~> 1.5"
+
+# Adds the `bigdecimal` gem that is required for Ruby 3.4+
+gem "bigdecimal"
+
+# If you have any plugins, put them here!
