@@ -1,8 +1,8 @@
 ---
 layout: post
-title: "Cursorエディタで利用可能な生成AIモデル一覧と使い分けガイド"
-subtitle: "開発効率を最大化する！Anthropic Claude, OpenAI GPT, Google Gemini, xAI Grokの完全比較と最適な選び方"
-date: 2025-11-09 10:00:00 -0400
+title: "Cursor AIモデル完全ガイド：開発タスクに最適なモデルの選び方【2025年11月版】"
+subtitle: "Claude 3.5 SonnetからGPT-4o、Command R+まで。各モデルの特性とユースケースを徹底解説。"
+date: 2025-11-09T10:00:00+09:00
 category: "生成AI"
 tags: ["Cursor", "AI", "LLM", "生成AI", "開発環境", "Copilot"]
 background: '/img/bg-post.jpg'
