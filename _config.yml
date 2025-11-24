@@ -20,7 +20,7 @@ google_analytics:   G-5MEVD0K1S4 # out your google-analytics code
 markdown:           kramdown
 paginate:           5
 paginate_path:      "/posts/page:num/"
-permalink:          /:basename/
+permalink:          /posts/:year-:month-:day-:basename/
 plugins:
   - jekyll-feed
   - jekyll-paginate
